@@ -37,10 +37,28 @@ public class visualize : MonoBehaviour {
 	public Move[]		Moves;
 	public Room			start_room;
 	public List<Link>	links;
+	public LineRenderer render;
+
+	Vector2 find_door(string str)
+	{
+		for (int i = 0; i < rooms.Length; i++) {
+			if (rooms[i].name == str)
+				return rooms[i].coord;
+		}
+		return Vector2.zero;
+	}
 
 	void create_links()
 	{
-
+		render = GetComponent<LineRenderer>();
+		int i = 0;
+		for (int e = 0; e < links.Count; e++) {
+			Vector2 a = find_door(links[e].a);
+			Vector2 b = find_door(links[e].b);
+			render.SetPosition(0, a);
+			render.SetPosition(1, b);
+			Debug.Log (i);
+		}
 	}
 
 	void Start () {
@@ -54,12 +72,6 @@ public class visualize : MonoBehaviour {
 			tmp_class.b = tmp_links[1];
 			links.Add(tmp_class);
 		}
-
-		foreach (Link link in links) {
-			Debug.Log (link.a);
-			Debug.Log (link.b);
-		}
-
 		move_index = 0;
 		nb_rooms = 0;
 		lines = File.ReadAllLines("/nfs/zfs-student-3/users/emammadz/unity_file/file.txt").ToArray();
