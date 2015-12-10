@@ -51,13 +51,14 @@ public class visualize : MonoBehaviour {
 	void create_links()
 	{
 		render = GetComponent<LineRenderer>();
+		render.SetVertexCount (links.Count * 2);
 		int i = 0;
 		for (int e = 0; e < links.Count; e++) {
 			Vector2 a = find_door(links[e].a);
 			Vector2 b = find_door(links[e].b);
-			render.SetPosition(0, a);
-			render.SetPosition(1, b);
-			Debug.Log (i);
+			render.SetPosition(i, a); 
+			render.SetPosition(i + 1, b);
+			i += 2;
 		}
 	}
 
@@ -126,7 +127,7 @@ public class visualize : MonoBehaviour {
 			{
 				Dictionary<int, string> tmp_dic = new Dictionary<int, string>();
 				string[] move_split = tmp[e].Split('-');
-				move_split[0] = move_split[0][1].ToString();
+				move_split[0] = move_split[0].Remove(0, 1);
 				tmp_dic.Add(Int32.Parse(move_split[0]) - 1, move_split[1]);
 				Moves[index].moves.Add(tmp_dic);
 			}
@@ -140,6 +141,22 @@ public class visualize : MonoBehaviour {
 
 	void Update () {
 		
+	}
+
+	IEnumerator move_ants(int s, int t)
+	{
+		float startTime = Time.time;
+		float journeyLength = Vector3.Distance(ants[s].gameObject.transform.position, new Vector3(rooms[t].coord.x, rooms[t].coord.y, 0));
+		float distCovered = 1f;
+		float fracJourney = distCovered / journeyLength;
+		while (fracJourney <= 1)
+		{
+			distCovered = 1.0f;
+			fracJourney = distCovered / journeyLength;
+			journeyLength = Vector3.Distance(ants[s].gameObject.transform.position, new Vector3(rooms[t].coord.x, rooms[t].coord.y, 0));
+			ants[s].gameObject.transform.position = Vector3.Lerp(ants[s].gameObject.transform.position, new Vector3(rooms[t].coord.x, rooms[t].coord.y, 0), fracJourney);
+			yield return new WaitForSeconds(1f / nb_ants);
+		}
 	}
 
 	IEnumerator loop()
@@ -157,15 +174,14 @@ public class visualize : MonoBehaviour {
 						{
 							if (rooms[t].name == dic[s])
 							{
-								ants[s].gameObject.transform.position = new Vector3(rooms[t].coord.x, rooms[t].coord.y, 0);
-								yield return new WaitForSeconds(2);
+								StartCoroutine(move_ants(s, t));
 								break;
 							}
 						}
 					}
 				}
 			}
-			yield return 0;
+			yield return new WaitForSeconds(1f);
 		}
 	}
 }
