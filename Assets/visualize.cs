@@ -32,13 +32,15 @@ public class visualize : MonoBehaviour {
 	public Room[]		rooms;
 	public GameObject[] doors;
 	public GameObject[] ants;
-	public int			move_index;
+        	public int			move_index;
 	public int			nb_moves;
 	public Move[]		Moves;
 	public Room			start_room;
+	public Room			end_room;
 	public List<Link>	links;
 	public LineRenderer render;
-
+	public GameObject	end_door;
+	public int			finish_walk;
 	Vector2 find_door(string str)
 	{
 		for (int i = 0; i < rooms.Length; i++) {
@@ -65,33 +67,40 @@ public class visualize : MonoBehaviour {
 	void Start () {
 
 		links = new List<Link> ();
-		string[] link_lines = File.ReadAllLines("/nfs/zfs-student-3/users/emammadz/unity_file/file2.txt").ToArray();
+		string[] link_lines = File.ReadAllLines ("/nfs/zfs-student-3/users/emammadz/unity_file/file2.txt").ToArray ();
 		for (int i = 0; i < link_lines.Length; i++) {
-			string[] tmp_links = link_lines[i].Split('-');
-			Link tmp_class = new Link();
-			tmp_class.a = tmp_links[0];
-			tmp_class.b = tmp_links[1];
-			links.Add(tmp_class);
+			string[] tmp_links = link_lines [i].Split ('-');
+			Link tmp_class = new Link ();
+			tmp_class.a = tmp_links [0];
+			tmp_class.b = tmp_links [1];
+			links.Add (tmp_class);
 		}
 		move_index = 0;
 		nb_rooms = 0;
-		lines = File.ReadAllLines("/nfs/zfs-student-3/users/emammadz/unity_file/file.txt").ToArray();
+		lines = File.ReadAllLines ("/nfs/zfs-student-3/users/emammadz/unity_file/file.txt").ToArray ();
 		for (int i = 0; i < lines.Length; i++) {
-			lines[i] = lines[i].Trim();
+			lines [i] = lines [i].Trim ();
 		}
 
-		nb_ants = Int32.Parse(lines [1]);;
+		nb_ants = Int32.Parse (lines [2]);
+		;
 		start_room = new Room ();
-		string[] tmp_line = lines[0].Split(' ');
+		string[] tmp_line = lines [0].Split (' ');
 		start_room.name = tmp_line [0];
-		start_room.coord = new Vector2(Int32.Parse (tmp_line [1]), Int32.Parse (tmp_line [2]));
+		start_room.coord = new Vector2 (Int32.Parse (tmp_line [1]), Int32.Parse (tmp_line [2]));
+		end_room = new Room ();
+		string[] tmp_line2 = lines [1].Split (' ');
+		end_room.name = tmp_line2 [0];
+		end_room.coord = new Vector2 (Int32.Parse (tmp_line2 [1]), Int32.Parse (tmp_line2 [2]));
 
 
 		ants = new GameObject[nb_ants];
 		for (int i = 0; i < nb_ants; i++)
-			ants[i] = (GameObject)GameObject.Instantiate(ant, start_room.coord, Quaternion.identity);
-
-		for (int i = 2; i < lines.Length; i++) {
+		{
+			ants [i] = (GameObject)GameObject.Instantiate (ant, start_room.coord, Quaternion.identity);
+			ants [i].GetComponent<SpriteRenderer>().sortingOrder = i + 1;
+		}
+		for (int i = 3; i < lines.Length; i++) {
 			if (lines[i][0] != 'L')
 				nb_rooms++;
 			else
@@ -104,17 +113,20 @@ public class visualize : MonoBehaviour {
 		}
 		rooms = new Room[nb_rooms];		
 
-		for (int i = 2; i <= nb_rooms + 1; i++) {
+		for (int i = 3; i <= nb_rooms + 2; i++) {
 			string[] tmp = lines[i].Split(' ');
-			rooms[i - 2] = new Room();
-			rooms[i - 2].name = tmp[0];
-			rooms[i - 2].coord = new Vector2(Int32.Parse(tmp[1]), Int32.Parse(tmp[2]));
+			rooms[i - 3] = new Room();
+			rooms[i - 3].name = tmp[0];
+			rooms[i - 3].coord = new Vector2(Int32.Parse(tmp[1]), Int32.Parse(tmp[2]));
 		}
 
 		doors = new GameObject[rooms.Length];
 
 		for (int i = 0; i < rooms.Length; i++) {
-			doors[i] = (GameObject)GameObject.Instantiate(door, rooms[i].coord, Quaternion.identity);
+			if (rooms[i].coord == end_room.coord)
+				doors[i] = (GameObject)GameObject.Instantiate(end_door, rooms[i].coord, Quaternion.identity);
+			else
+				doors[i] = (GameObject)GameObject.Instantiate(door, rooms[i].coord, Quaternion.identity);
 		 }
 
 		Moves = new Move[nb_moves - move_index + 1];
@@ -145,7 +157,6 @@ public class visualize : MonoBehaviour {
 
 	IEnumerator move_ants(int s, int t)
 	{
-		float startTime = Time.time;
 		float journeyLength = Vector3.Distance(ants[s].gameObject.transform.position, new Vector3(rooms[t].coord.x, rooms[t].coord.y, 0));
 		float distCovered = 1f;
 		float fracJourney = distCovered / journeyLength;
@@ -157,10 +168,13 @@ public class visualize : MonoBehaviour {
 			ants[s].gameObject.transform.position = Vector3.Lerp(ants[s].gameObject.transform.position, new Vector3(rooms[t].coord.x, rooms[t].coord.y, 0), fracJourney);
 			yield return new WaitForSeconds(1f / nb_ants);
 		}
+		finish_walk++;
 	}
 
 	IEnumerator loop()
 	{
+		int counter = 0;
+		finish_walk = 0;
 		for (int e = 0; e < Moves.Length; e++)
 		{
 			foreach (Dictionary<int, string> dic in Moves[e].moves)
@@ -180,8 +194,16 @@ public class visualize : MonoBehaviour {
 						}
 					}
 				}
+				counter++;
 			}
-			yield return new WaitForSeconds(1f);
+			while (finish_walk != counter)
+			{
+				Debug.Log(finish_walk);
+				Debug.Log(counter);
+				yield return new WaitForSeconds(0.1f);
+			}
+			finish_walk = 0;
+			counter = 0;
 		}
 	}
 }
