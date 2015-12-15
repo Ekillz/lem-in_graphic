@@ -41,6 +41,8 @@ public class visualize : MonoBehaviour {
 	public LineRenderer render;
 	public GameObject	end_door;
 	public int			finish_walk;
+	public bool			thick;
+
 	Vector2 find_door(string str)
 	{
 		for (int i = 0; i < rooms.Length; i++) {
@@ -53,6 +55,8 @@ public class visualize : MonoBehaviour {
 	void create_links()
 	{
 		render = GetComponent<LineRenderer>();
+		if (thick)
+			render.SetWidth (0.4f, 0.4f);
 		render.SetVertexCount (links.Count * 2);
 		int i = 0;
 		for (int e = 0; e < links.Count; e++) {
@@ -65,15 +69,20 @@ public class visualize : MonoBehaviour {
 	}
 
 	void Start () {
-
+		thick = false;
 		links = new List<Link> ();
 		string[] link_lines = File.ReadAllLines ("/nfs/zfs-student-3/users/emammadz/unity_file/file2.txt").ToArray ();
 		for (int i = 0; i < link_lines.Length; i++) {
-			string[] tmp_links = link_lines [i].Split ('-');
-			Link tmp_class = new Link ();
-			tmp_class.a = tmp_links [0];
-			tmp_class.b = tmp_links [1];
-			links.Add (tmp_class);
+			if (link_lines[i] == "thick")
+				thick = true;
+			else
+			{
+				string[] tmp_links = link_lines [i].Split ('-');
+				Link tmp_class = new Link ();
+				tmp_class.a = tmp_links [0];
+				tmp_class.b = tmp_links [1];
+				links.Add (tmp_class);
+			}
 		}
 		move_index = 0;
 		nb_rooms = 0;
@@ -83,7 +92,6 @@ public class visualize : MonoBehaviour {
 		}
 
 		nb_ants = Int32.Parse (lines [2]);
-		;
 		start_room = new Room ();
 		string[] tmp_line = lines [0].Split (' ');
 		start_room.name = tmp_line [0];
@@ -197,11 +205,7 @@ public class visualize : MonoBehaviour {
 				counter++;
 			}
 			while (finish_walk != counter)
-			{
-				Debug.Log(finish_walk);
-				Debug.Log(counter);
 				yield return new WaitForSeconds(0.1f);
-			}
 			finish_walk = 0;
 			counter = 0;
 		}
